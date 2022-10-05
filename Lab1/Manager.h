@@ -18,12 +18,12 @@ public:
 	struct FunctionInfo {
 		N argument;
 		//T result;
-		std::variant<hard_fail, soft_fail, T> result_variant;
+		std::variant<hard_fail, soft_fail, T> result;
 		std::function<T(N, ...)> function;
 	};
 	
-	FunctionInfo<os::lab1::compfuncs::comp_result<int>, int> f_info;
-	//FunctionInfo<os::lab1::compfuncs::comp_result<int>, int> g_info;
+	FunctionInfo<os::lab1::compfuncs::comp_result<int>, int> f_info;//????
+	////FunctionInfo<os::lab1::compfuncs::comp_result<int>, int> g_info;
 
 	/*template<typename T>
 	using result_variant = std::variant<hard_fail, soft_fail, T>;*/
@@ -44,7 +44,7 @@ public:
 			std::thread thr(runFunction(info.function));
 			thr.join();
 			Sleep(2000);
-			if (std::get<int>(info.result_variant))
+			if (std::get<int>(info.result))
 			{
 				break;
 			}
@@ -70,6 +70,7 @@ public:
 		{
 			std::cout << "Enter x: ";
 			std::cin >> x;
+			//FunctionInfo f_info{ x, 0, function };
 			f_info.argument = x;
 			g_info.argument = x;
 			f_info.function = function;
@@ -77,8 +78,24 @@ public:
 
 			f_info = manageFunction(f_info);
 			g_info = manageFunction(g_info);
+
+			if (std::holds_alternative<hard_fail>(f_info.result))
+			{
+				std::cout << "Error in f" << std::endl;
+			}
+			else if (std::holds_alternative<hard_fail>(g))
+			{
+				std::cout << "Error in g" << std::endl;
+			}
+			else
+			{
+				//std::cout << "Good f: " << std::get<int>(f_info.result) << std::endl;
+				auto op_group = os::lab1::compfuncs::op_group::AND;
+				std::cout << compare(std::get<int>(f), std::get<int>(g), op_group) << std::endl;
+			}
 			
-			if (std::holds_alternative<int>(f) && std::holds_alternative<int>(g))
+			
+			/*if (std::holds_alternative<int>(f) && std::holds_alternative<int>(g))
 			{
 				auto op_group = os::lab1::compfuncs::op_group::AND;
 				std::cout << compare(std::get<int>(f), std::get<int>(g), op_group) <<std::endl;
@@ -86,7 +103,7 @@ public:
 			else
 			{
 				std::cout << "Error" << std::endl;
-			}
+			}*/
 			std::cout << "Once more? y/n ";
 			char c;
 			std::cin >> c;
