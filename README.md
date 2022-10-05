@@ -1,7 +1,7 @@
 # Communication between tasks
 The aim ofthis lab is to correctly organize computation using multiple processes
-or threads (scheduling entities). Solution should compute expression /(x)0tg(x),
-where 0 is a binary operation, integer value x is scanned from the input, computations f and g are parameters and specified independently. The schematic ofthe
+or threads (scheduling entities). Solution should compute expression f(x) X g(x),
+where X is a binary operation, integer value x is scanned from the input, computations f and g are parameters and specified independently. The schematic ofthe
 system is given in figure 1. The major requirement of the exercise is that computations f and g should run in parallel to main component, manager. Manager
 initializes computation process (effectively starting f and g for the scanned x),
 computes the final result and organizes cancellation. Depending on variant manager can be single- or multi-threaded. Multithreaded manager can summarize the
