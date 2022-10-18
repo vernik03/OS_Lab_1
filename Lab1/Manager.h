@@ -14,42 +14,61 @@ public:
 	struct hard_fail {};
 	struct soft_fail {};
 
-	template<typename T, typename N>
+	template<typename T>
 	struct FunctionInfo {
-		N argument;
-		//T result;
+		int argument;
 		std::variant<hard_fail, soft_fail, T> result;
-		std::function<T(N, ...)> function;
+		std::function<T(int)> function;
 	};
 	
-	FunctionInfo<os::lab1::compfuncs::comp_result<int>, int> f_info;//????
-	////FunctionInfo<os::lab1::compfuncs::comp_result<int>, int> g_info;
-
-	/*template<typename T>
-	using result_variant = std::variant<hard_fail, soft_fail, T>;*/
 	
 	Manager(){};
 	~Manager(){};
 
-	template<typename F, typename N>
-	void runFunction(std::function<F(N num, ...)> f) {		
-		f_info.result_variant = f(x);
+	template<typename T>
+	void runFunction(std::function<T(int)> f) {
+
+		 f(x);
+		lk.unlock();
+		cv.notify_one();
 	}
 
-	template<typename T, typename F, typename N>
-	FunctionInfo<T, N> manageFunction(FunctionInfo<T, N>& info) {
+	template<typename T>
+	FunctionInfo<T> manageFunction(FunctionInfo<T>& f) {
 		
 		for (int i = 0; i < 3; i++)
 		{
-			std::thread thr(runFunction(info.function));
-			thr.join();
-			Sleep(2000);
-			if (std::get<int>(info.result))
+			using namespace std::chrono;
+			high_resolution_clock::time_point t1 = high_resolution_clock::now();
+			
+			std::thread t_f(manageFunction(f.function()));
+			while (true)
 			{
-				break;
+				high_resolution_clock::time_point t2 = high_resolution_clock::now();
+
+				duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+				
+				if (time_span.count() > 5)
+				{
+					break;
+				}
+
+				
+				//таймер ждёт
+				
+				//если таймер превысил -> break
+				// 
+				//проверить, что он не разлочен -> break
+			}
+			
+			
+			if (std::get<int>(f.result))
+			{
+				return f;
 			}
 		}			
-		info.result_variant = hard_fail;
+		f.result_variant = hard_fail;
+		return f;
 	}
 
 	bool compare(int f, int g, os::lab1::compfuncs::op_group op_group) {
@@ -63,21 +82,26 @@ public:
 		}	
 	}
 
-	template<typename T>
-	void runInterface(T function) {
+	template<typename T1, typename T2>
+	void runInterface(T1 function, int x1, T2 function2, int x2) {
 		bool flag = 1;
+		FunctionInfo f{ x1, function(x1), function };
+		FunctionInfo g{ x2, function2(x2), function2 };
 		while (flag)
 		{
 			std::cout << "Enter x: ";
 			std::cin >> x;
-			//FunctionInfo f_info{ x, 0, function };
-			f_info.argument = x;
-			g_info.argument = x;
-			f_info.function = function;
-			g_info.function = function;
+		
+			std::thread thr(manageFunction(f));
+			std::thread thr2(manageFunction(g));
+			thr.join();
+			thr2.join();
 
-			f_info = manageFunction(f_info);
-			g_info = manageFunction(g_info);
+			std::unique_lock<std::mutex> lk(m);
+			cv.wait(lk, [] {return processed; });
+			
+			/*f = manageFunction(f);
+			g = manageFunction(g);*/
 
 			if (std::holds_alternative<hard_fail>(f_info.result))
 			{

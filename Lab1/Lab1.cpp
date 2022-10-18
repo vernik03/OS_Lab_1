@@ -6,6 +6,12 @@
 
 #include "Manager.h"
 
+std::mutex m1;
+std::condition_variable cv1;
+
+std::mutex m2;
+std::condition_variable cv2;
+
 int main()
 {
 
@@ -24,6 +30,14 @@ int main()
     std::cout << "f(1): " << os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>(1) << std::endl;*/
 
     //std::cout << typeid(os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>).name() << std::endl;
+
+
 	Manager manager;
-	manager.runInterface(os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>);
+    manager.runInterface(os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>);
+    manager.runInterface(func, 5, func, -3);
+}
+
+bool func(int x) {
+{
+		return x > 0 ? true : false;
 }
