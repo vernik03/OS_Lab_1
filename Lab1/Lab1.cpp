@@ -6,11 +6,16 @@
 
 #include "Manager.h"
 
+char question_res;
+std::mutex question_m;
+
 std::mutex m1;
 std::condition_variable cv1;
+double result_f1;
 
 std::mutex m2;
 std::condition_variable cv2;
+double result_f2;
 
 int main()
 {

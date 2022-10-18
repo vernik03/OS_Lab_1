@@ -28,17 +28,20 @@ public:
 	template<typename T>
 	void runFunction(std::function<T(int)> f) {
 
-		 f(x);
-		lk.unlock();
-		cv.notify_one();
+		m1.lock();
+		result_f1 = std::reinterpret_cast<double>(f(x));
+
+		m1.unlock();
+		//cv.notify_one();
 	}
 
 	template<typename T>
 	FunctionInfo<T> manageFunction(FunctionInfo<T>& f) {
+		using namespace std::chrono;
 		
 		for (int i = 0; i < 3; i++)
 		{
-			using namespace std::chrono;
+			
 			high_resolution_clock::time_point t1 = high_resolution_clock::now();
 			
 			std::thread t_f(manageFunction(f.function()));
@@ -50,7 +53,21 @@ public:
 				
 				if (time_span.count() > 5)
 				{
-					break;
+					if (m1.try_lock())
+					{
+						f.result = result_f1;
+						m1.unlock();
+						return f;
+					}
+
+				}
+
+				if (m1.try_lock())
+				{
+					f.result = result_f1;
+					
+					m1.unlock();
+					return f;
 				}
 
 				
@@ -60,17 +77,49 @@ public:
 				// 
 				//проверить, что он не разлочен -> break
 			}
-			
-			
-			if (std::get<int>(f.result))
+			f.result = soft_fail;
+			t1 = high_resolution_clock::now();
+			std::thread question(question("Please confirm that computation should be stopped y(es, stop) / n(ot yet)[n]"));
+			while (true)
 			{
-				return f;
+				high_resolution_clock::time_point t2 = high_resolution_clock::now();
+				duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+				if (time_span.count() > 5)
+				{
+					break;
+				}
+				if (question_m.try_lock())
+				{
+					switch (question_res)
+					{
+					case 'y':
+						f.result = result_f1;
+						question_m.unlock();
+						return f;
+					case 'n':
+						question_m.unlock();
+						break;
+					default:
+						question_m.unlock();
+						break;
+					}
+				}
 			}
 		}			
-		f.result_variant = hard_fail;
+		
+		f.result = hard_fail;
 		return f;
 	}
+	
+	
+	void question(std::string s) {
+		question_m.lock();
+		std::cout << s << std::endl;
+		std::cin >> question_res;
+		question_m.unlock();
+	}
 
+		
 	bool compare(int f, int g, os::lab1::compfuncs::op_group op_group) {
 		switch (op_group) {
 		case 0:
@@ -93,9 +142,9 @@ public:
 			std::cin >> x;
 		
 			std::thread thr(manageFunction(f));
-			std::thread thr2(manageFunction(g));
+			//std::thread thr2(manageFunction(g));
 			thr.join();
-			thr2.join();
+			//thr2.join();
 
 			std::unique_lock<std::mutex> lk(m);
 			cv.wait(lk, [] {return processed; });
@@ -103,11 +152,11 @@ public:
 			/*f = manageFunction(f);
 			g = manageFunction(g);*/
 
-			if (std::holds_alternative<hard_fail>(f_info.result))
+			if (std::holds_alternative<hard_fail>(f.result))
 			{
 				std::cout << "Error in f" << std::endl;
 			}
-			else if (std::holds_alternative<hard_fail>(g))
+			else if (std::holds_alternative<hard_fail>(g.result))
 			{
 				std::cout << "Error in g" << std::endl;
 			}
