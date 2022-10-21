@@ -17,7 +17,7 @@ int main()
     */
 
     /*static_assert(std::is_same<bool, os::lab1::compfuncs::op_group_traits<os::lab1::compfuncs::OR>::value_type>(), "wrong typing for OR");
-
+	
     std::cout << "f(0) and g(0): " << std::endl;
     std::cout << std::boolalpha << "f(0) hard failed is " << std::holds_alternative<os::lab1::compfuncs::hard_fail>(os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>(0)) << std::endl;*/
  /*   auto f1 = os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>(0);
@@ -29,6 +29,8 @@ int main()
     //std::cout << typeid(os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>).name() << std::endl;
 
     
+
+	
 
 	
 	
@@ -62,3 +64,5 @@ int main()
 //	//если таймер превысил -> break
 //	//проверить, что он не разлочен -> break
 //}
+
+

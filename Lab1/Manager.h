@@ -5,12 +5,13 @@
 
 #include "trialfuncs.hpp"
 #include <shared_mutex>
+#include <any>
 
 static char question_res = NULL;
 
 static std::mutex m_f;
 static std::condition_variable cv_f;
-static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_f;
+static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_f = NULL;
 static bool ready_f = false;
 static bool hunged_f = false;
 
@@ -21,7 +22,9 @@ static std::condition_variable cv_stopper;
 
 static std::mutex m_g;
 static std::condition_variable cv_g;
-static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g;
+//static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g;
+static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g = NULL;
+//static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, std::any> result_g = NULL;
 static bool ready_g = false;
 static bool hunged_g = false;
 
@@ -51,26 +54,26 @@ public:
 		bool is_canceled = false;
 	};
 
-	//template<typename T>
-	void runFunctionF(std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int>(int)> f, int x) {
-		std::cout << "f(x)!\n";
+	template<typename T>
+	void runFunctionF(std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T>(int)> f, int x) {
+		//std::cout << "f(x)!\n";
 		result_f = f(x);
 		ready_f = true;
-		std::cout << "f(x)ready\n";
+		//std::cout << "f(x)ready\n";
 		cv_f.notify_one();
-		std::cout << "f(x)notify\n";
+		//std::cout << "f(x)notify\n";
 	}
 	
-	//template<typename T>
-	void runFunctionG(std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int>(int)> g, int x) {
+	template<typename T>
+	void runFunctionG(std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T>(int)> g, int x) {
 
-		std::cout << "g(x)!\n";
+		//std::cout << "g(x)!\n";
 		result_g = g(x);
 		ready_g = true;
 
-		std::cout << "g(x)ready\n";
+		//std::cout << "g(x)ready\n";
 		cv_g.notify_one();
-		std::cout << "g(x)notify\n";
+		//std::cout << "g(x)notify\n";
 	}
 	
 	void waiter_f() {
@@ -110,29 +113,29 @@ public:
 				ready_g = true;
 				cv_g.notify_one();*/
 			}
-			std::cout << "if" << std::endl;
+			//std::cout << "if" << std::endl;
 
 			if (f.type == func::f) {
-				std::cout << "unique_lock\n";
-				std::cout << "unique_lock_end\n";
+				//std::cout << "unique_lock\n";
+				//std::cout << "unique_lock_end\n";
 				std::unique_lock lk_f(m_f);
 				cv_f.wait(lk_f, [] {return ready_f || hunged_f; });//? (lk)
-				std::cout << "f() done" << std::endl;
+				//std::cout << "f() done" << std::endl;
 				if (hunged_f)
 				{
 					result_f = os::lab1::compfuncs::soft_fail();
 				}
 			}
 			else {
-				std::cout << "unique_lock\n";
-				std::cout << "unique_lock_end\n";
+				//std::cout << "unique_lock\n";
+				//std::cout << "unique_lock_end\n";
 				std::unique_lock lk_g(m_g);
 				cv_g.wait(lk_g, [] {return ready_g || hunged_g; });//? (lk)
 				if (hunged_g)
 				{
 					result_f = os::lab1::compfuncs::soft_fail();
 				}
-				std::cout << "g() done" << std::endl;
+				//std::cout << "g() done" << std::endl;
 			}
 			switch (result_f.index()) {
 			case 0:
@@ -196,7 +199,7 @@ public:
 		result_f = NULL;
 		result_g = NULL;
 		f.result = result_f;
-		g.result = result_g;
+		g.result =result_g;
 		ready_f = false;
 		ready_g = false;
 		hunged_f = false;
@@ -210,10 +213,10 @@ public:
 		std::cin >> question_res;
 	}
 
-	//template<typename T1, typename T2>
-	bool INT_SUM(int f, int g) {
+	template<typename T1, typename T2>
+	bool countSum(T1 f, T2 g) {
 		//return reinterpret_cast<int>(f + g);
-		std::cout << "f() + g()";
+		std::cout << "f() + g() = ";
 		return f + g;
 	}
 
@@ -250,13 +253,15 @@ public:
 	}
 	
 	//template<typename T1, typename T2>
-	void runInterface(std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int>(int)> function,
-		std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int>(int)> function2) {		
+	void runInterface(std::function < std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int>(int)> function,
+		std::function < std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int>(int)> function2)
+	{
 		std::cout << "Manager started" << std::endl;
-		FunctionInfo f { func::f, 0, result_f, function };
-		FunctionInfo g { func::g, 0, result_g, function2 };
+		FunctionInfo<int> f { func::f, 0, result_f, function };
+		FunctionInfo<int> g { func::g, 0, result_g, function2 };
 		while (true)
 		{
+			int x;
 			startReset(f, g);
 			std::cout << "Enter x: ";
 			std::cin >> x;
@@ -271,7 +276,7 @@ public:
 
 			if (!output(f, g) && !output(g, f))
 			{
-				std::cout <<  INT_SUM(std::get<2>(f.result), std::get<2>(g.result)) << std::endl;
+				std::cout << countSum(std::get<2>(f.result), std::get<2>(g.result)) << std::endl;
 			};
 
 			while (true)

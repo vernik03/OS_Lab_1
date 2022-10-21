@@ -84,13 +84,11 @@ namespace os::lab1::compfuncs {
 
     template<op_group O> 
     typename op_group_traits<O>::result_type trial_f(int case_nr) {
-		std::cout << "trial_f" << std::endl;
 	return gen_func<typename op_group_traits<O>::value_type>(op_group_trial_traits<O>::cases[case_nr].f_attrs);
     }
 
     template<op_group O> 
     typename op_group_traits<O>::result_type trial_g(int case_nr) {
-        std::cout << "trial_g" << std::endl;
     return gen_func<typename op_group_traits<O>::value_type>(op_group_trial_traits<O>::cases[case_nr].g_attrs);
     }
 }
