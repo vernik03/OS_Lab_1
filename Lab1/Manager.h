@@ -7,11 +7,13 @@
 #include <shared_mutex>
 #include <any>
 
+
+
+
 static char question_res = NULL;
 
 static std::mutex m_f;
 static std::condition_variable cv_f;
-static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_f = 0;
 static bool ready_f = false;
 static bool hunged_f = false;
 
@@ -23,10 +25,15 @@ static std::condition_variable cv_stopper;
 static std::mutex m_g;
 static std::condition_variable cv_g;
 //static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g;
-static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g = 0;
 //static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, std::any> result_g = NULL;
 static bool ready_g = false;
 static bool hunged_g = false;
+
+static bool hard = false;
+//
+//std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_f = 0;
+//
+//std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g = 0;
 
 
 
@@ -55,9 +62,10 @@ public:
 	};
 
 	template<typename T>
-	void runFunctionF(std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T>(int)> f, int x) {
+	void runFunctionF(std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T>(int)> f, int x,
+		std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T>& result) {
 		//std::cout << "f(x)!\n";
-		result_f = f(x);
+		result = f(x);
 		ready_f = true;
 		//std::cout << "f(x)ready\n";
 		cv_f.notify_one();
@@ -65,10 +73,11 @@ public:
 	}
 	
 	template<typename T>
-	void runFunctionG(std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T>(int)> g, int x) {
+	void runFunctionG(std::function<std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T>(int)> g, int x,
+		std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T> &result) {
 
 		//std::cout << "g(x)!\n";
-		result_g = g(x);
+		result = g(x);
 		ready_g = true;
 
 		//std::cout << "g(x)ready\n";
@@ -90,12 +99,14 @@ public:
 
 	template<typename T>
 	void manageFunction(FunctionInfo<T>& f) {
+
+		std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T> result = T();
 		for (int i = 0; i < 3; i++)
 		{
 			f.try_count++;
 			if (f.type == func::f) {
 				std::cout << "f() works" << std::endl;
-				std::thread rf_thread([this, f] {runFunctionF(f.function, f.argument); });
+				std::thread rf_thread([this, f, &result] {runFunctionF(f.function, f.argument, result); });
 				rf_thread.detach();
 				std::thread waiter_f_thread([this] {waiter_f(); });
 				waiter_f_thread.detach();
@@ -105,7 +116,9 @@ public:
 			}
 			else {
 				std::cout << "g() works" << std::endl;
-				std::thread rg_thread([this, f] {runFunctionG(f.function, f.argument); });
+
+
+				std::thread rg_thread([this, f, &result] {runFunctionG(f.function, f.argument, result); });
 				rg_thread.detach();
 				std::thread waiter_g_thread([this] {waiter_g(); });
 				waiter_g_thread.detach();
@@ -123,7 +136,7 @@ public:
 				//std::cout << "f() done" << std::endl;
 				if (hunged_f)
 				{
-					result_f = os::lab1::compfuncs::soft_fail();
+					result = os::lab1::compfuncs::soft_fail();
 				}
 			}
 			else {
@@ -133,22 +146,23 @@ public:
 				cv_g.wait(lk_g, [] {return ready_g || hunged_g; });//? (lk)
 				if (hunged_g)
 				{
-					result_f = os::lab1::compfuncs::soft_fail();
+					result = os::lab1::compfuncs::soft_fail();
 				}
 				//std::cout << "g() done" << std::endl;
 			}
-			switch (result_f.index()) {
+			switch (result.index()) {
 			case 0:
 				f.result = os::lab1::compfuncs::hard_fail();
+				hard = true;
 				return;
 			case 1:
 				f.result = os::lab1::compfuncs::soft_fail();
 				break;
 			case 2:
-				f.result = std::get<2>(result_f);
+				f.result = std::get<2>(result);
 				return;
 			}
-			if (std::holds_alternative<os::lab1::compfuncs::soft_fail>(f.result))
+			if (std::holds_alternative<os::lab1::compfuncs::soft_fail>(f.result) && !hard)
 			{
 				std::unique_lock stopper_lk(m_stopper);
 				cv_stopper.wait(stopper_lk, [] {return stopper; });
@@ -196,14 +210,15 @@ public:
 
 	template<typename T1, typename T2>
 	void startReset(FunctionInfo<T1> f, FunctionInfo<T2> g) {
-		result_f = 0;
-		result_g = 0;
-		f.result = result_f;
-		g.result =result_g;
+		/*result_f = 0;
+		result_g = 0;*/
+		f.result = T1();
+		g.result = T2();
 		ready_f = false;
 		ready_g = false;
 		hunged_f = false;
 		hunged_g = false;
+		hard = false;
 		question_res = NULL;
 	}
 	
@@ -252,13 +267,18 @@ public:
 		return false;
 	}
 	
-	//template<typename T1, typename T2>
-	void runInterface(std::function < std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int>(int)> function,
-		std::function < std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int>(int)> function2)
+	template<typename T1, typename T2>	
+	void runInterface(std::function < std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T1>(int)> function,
+		std::function < std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T2>(int)> function2)
 	{
 		std::cout << "Manager started" << std::endl;
-		FunctionInfo<int> f { func::f, 0, result_f, function };
-		FunctionInfo<int> g { func::g, 0, result_g, function2 };
+
+		std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T1> resultf = T1();
+		std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, T2> resultg = T2();
+		//FunctionInfo<T1> f { func::f, 0, result_f, function };
+		//FunctionInfo<T2> g { func::g, 0, result_g, function2 };
+		FunctionInfo<T1> f { func::f, 0, resultf, function };
+		FunctionInfo<T2> g { func::g, 0, resultg, function2 };
 		while (true)
 		{
 			int x;
@@ -273,11 +293,21 @@ public:
 			thr1.join();
 			thr2.join();
 
-
-			if (!output(f, g) && !output(g, f))
+			if (hard)
+			{
+				if (std::holds_alternative<os::lab1::compfuncs::hard_fail>(f.result)) {
+					output(f, g);
+					continue;
+				}
+				else if (std::holds_alternative<os::lab1::compfuncs::hard_fail>(g.result)) {
+					output(g, f);
+					continue;
+				}
+			}
+			else if(!output(f, g) && !output(g, f))
 			{
 				std::cout << countSum(std::get<2>(f.result), std::get<2>(g.result)) << std::endl;
-			};
+			}			
 
 			while (true)
 			{
