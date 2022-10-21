@@ -60,10 +60,10 @@ public:
 		{
 			f.try_count++;
 			if (f.type == func::f) {
-				std::thread rf_thread(runFunctionF(f.function, f.argument));
+				std::thread rf_thread([this, f] {runFunctionF(f.function, f.argument); });
 			}
 			else {
-				std::thread rg_thread(runFunctionG(f.function, f.argument));
+				std::thread rg_thread([this, f] {runFunctionG(f.function, f.argument); });
 			}
 			if (f.type == func::f) {
 				std::unique_lock lk(m_f);
@@ -88,7 +88,7 @@ public:
 			{
 				using namespace std::chrono;
 				high_resolution_clock::time_point t1 = high_resolution_clock::now();
-				std::thread tr_question(question("Please confirm that computation should be stopped y(es, stop) / n(ot yet)[n]"));
+				std::thread tr_question([this] {question("Please confirm that computation should be stopped y(es, stop) / n(ot yet)[n]"); });
 				while (true)
 				{
 					high_resolution_clock::time_point t2 = high_resolution_clock::now();
