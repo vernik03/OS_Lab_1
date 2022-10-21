@@ -21,7 +21,7 @@ static std::condition_variable cv_stopper;
 
 static std::mutex m_g;
 static std::condition_variable cv_g;
-static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int>  result_g;
+static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g;
 static bool ready_g = false;
 static bool hunged_g = false;
 

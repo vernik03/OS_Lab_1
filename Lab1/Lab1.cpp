@@ -34,6 +34,8 @@ int main()
 	
 	Manager manager;
     manager.runInterface(os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>, os::lab1::compfuncs::trial_g<os::lab1::compfuncs::INT_SUM>);
+	std::cout << "end of main" << std::endl;
+	return 0;
    
 }
 
