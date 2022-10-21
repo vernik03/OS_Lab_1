@@ -11,7 +11,7 @@ static char question_res = NULL;
 
 static std::mutex m_f;
 static std::condition_variable cv_f;
-static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_f = NULL;
+static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_f = 0;
 static bool ready_f = false;
 static bool hunged_f = false;
 
@@ -23,7 +23,7 @@ static std::condition_variable cv_stopper;
 static std::mutex m_g;
 static std::condition_variable cv_g;
 //static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g;
-static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g = NULL;
+static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, int> result_g = 0;
 //static std::variant<os::lab1::compfuncs::hard_fail, os::lab1::compfuncs::soft_fail, std::any> result_g = NULL;
 static bool ready_g = false;
 static bool hunged_g = false;
@@ -196,8 +196,8 @@ public:
 
 	template<typename T1, typename T2>
 	void startReset(FunctionInfo<T1> f, FunctionInfo<T2> g) {
-		result_f = NULL;
-		result_g = NULL;
+		result_f = 0;
+		result_g = 0;
 		f.result = result_f;
 		g.result =result_g;
 		ready_f = false;
