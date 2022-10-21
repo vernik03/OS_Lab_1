@@ -20,7 +20,7 @@ int main()
 
     std::cout << "f(0) and g(0): " << std::endl;
     std::cout << std::boolalpha << "f(0) hard failed is " << std::holds_alternative<os::lab1::compfuncs::hard_fail>(os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>(0)) << std::endl;*/
-    /*auto f1 = os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>(0);
+ /*   auto f1 = os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>(0);
 	
     std::cout << "f(0): " << os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>(0) << std::endl;
     std::cout << "g(1): " << os::lab1::compfuncs::trial_g<os::lab1::compfuncs::INT_SUM>(1) << std::endl;
@@ -33,7 +33,7 @@ int main()
 	
 	
 	Manager manager;
-    manager.runInterface(os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>, 0, os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>, 1);
+    manager.runInterface(os::lab1::compfuncs::trial_f<os::lab1::compfuncs::INT_SUM>, os::lab1::compfuncs::trial_g<os::lab1::compfuncs::INT_SUM>);
    
 }
 
